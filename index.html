@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salt Water Particle Lab</title>
+<style>
+  :root{--navy:#0E3A53;--ink:#15232E;--grey:#61707C;--teal:#0F8B8D;--blue:#2563A8;--coral:#D9603B;--sand:#C98A1E;--bg:#F7FAFB;--card:#fff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}
+  header{background:var(--navy);color:#fff;padding:14px 22px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  header h1{margin:0;font-size:24px}
+  header span{color:#9FD8DA;font-size:14px}
+  .wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;padding:16px 22px;max-width:1300px;margin:0 auto}
+  .stage{background:var(--card);border-radius:14px;box-shadow:0 2px 10px #15232E1a;padding:10px;position:relative}
+  canvas{width:100%;height:auto;display:block;border-radius:10px}
+  .viewtoggle{position:absolute;top:18px;left:18px;display:flex;background:#EAF4F6;border-radius:999px;padding:4px}
+  .viewtoggle button{border:0;background:transparent;padding:8px 14px;border-radius:999px;font-weight:bold;font-size:14px;color:var(--navy);cursor:pointer}
+  .viewtoggle button.on{background:var(--navy);color:#fff}
+  .side{display:flex;flex-direction:column;gap:12px}
+  .card{background:var(--card);border-radius:14px;box-shadow:0 2px 10px #15232E1a;padding:14px 16px}
+  .card h2{margin:0 0 8px;font-size:15px;letter-spacing:1.5px;color:var(--teal)}
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn{border:0;border-radius:10px;padding:11px 8px;font-size:14px;font-weight:bold;cursor:pointer;color:#fff;background:var(--navy)}
+  .btn.salt{background:#7A5BC7}.btn.sand{background:var(--sand)}.btn.stir{background:var(--blue)}.btn.reset{background:#fff;color:var(--navy);box-shadow:inset 0 0 0 2px var(--navy)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  label.row{display:flex;justify-content:space-between;font-size:14px;font-weight:bold;margin-top:4px}
+  input[type=range]{width:100%}
+  .predict p{margin:0 0 8px;font-size:15px}
+  .choices{display:flex;gap:8px}
+  .choices button{flex:1;border:2px solid var(--navy);background:#fff;color:var(--navy);border-radius:10px;padding:9px 0;font-size:15px;font-weight:bold;cursor:pointer}
+  .choices button.picked{background:var(--navy);color:#fff}
+  .fb{margin-top:8px;font-size:14px;line-height:1.4}
+  .explain{font-size:15px;line-height:1.45;min-height:84px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--grey)}
+  .dot{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:4px}
+  .poe{display:flex;gap:6px;margin-bottom:8px}
+  .poe span{flex:1;text-align:center;font-size:12px;font-weight:bold;letter-spacing:1px;padding:5px 0;border-radius:999px;background:#EAF4F6;color:var(--grey)}
+  .poe span.on{background:var(--blue);color:#fff}
+  footer{text-align:center;color:var(--grey);font-size:12px;padding:6px 0 18px}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>Salt Water Particle Lab</h1><span>Grade 6 Science · Lesson 1 · What’s really in the water?</span></header>
+<div class="wrap">
+  <div class="stage">
+    <canvas id="c" width="900" height="600" aria-label="Simulation of a beaker of water on a scale"></canvas>
+    <div class="viewtoggle" role="group" aria-label="View">
+      <button id="vMacro">👁 What we see</button>
+      <button id="vMicro" class="on">🔬 Particle view</button>
+    </div>
+  </div>
+  <div class="side">
+    <div class="card predict">
+      <div class="poe"><span id="pP" class="on">PREDICT</span><span id="pO">OBSERVE</span><span id="pE">EXPLAIN</span></div>
+      <p><b>200 g water + 20 g salt.</b> After the salt dissolves, what will the scale read?</p>
+      <div class="choices"><button data-v="200">200 g</button><button data-v="210">210 g</button><button data-v="220">220 g</button></div>
+      <div class="fb" id="fb">Make your prediction first, then add the salt.</div>
+    </div>
+    <div class="card">
+      <h2>CONTROLS</h2>
+      <div class="btns">
+        <button class="btn salt" id="addSalt">+ 20 g salt</button>
+        <button class="btn sand" id="addSand">+ 20 g sand</button>
+        <button class="btn stir" id="stir">Stir</button>
+        <button class="btn reset" id="reset">Reset</button>
+      </div>
+      <label class="row" for="evap"><span>Evaporate (heat)</span><span id="evapV">0%</span></label>
+      <input type="range" id="evap" min="0" max="100" value="0">
+    </div>
+    <div class="card">
+      <h2>WHAT’S HAPPENING?</h2>
+      <div class="explain" id="explain">This beaker holds 200 g of water. In particle view you can see the water particles moving all the time.</div>
+    </div>
+    <div class="card legend">
+      <span><i class="dot" style="background:#7FB8E6"></i>water</span>
+      <span><i class="dot" style="background:#8E6BD8"></i>sodium (salt)</span>
+      <span><i class="dot" style="background:#2FB37A"></i>chloride (salt)</span>
+      <span><i class="dot" style="background:#B07A3A"></i>sand</span>
+    </div>
+  </div>
+</div>
+<footer>A simplified model for teaching: particles are not to scale. Made for EDUC 515 (Grade 6 Science scaffold plan).</footer>
+<script>
+(() => {
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const B = { x: 250, y: 90, w: 400, h: 380 };     // beaker inner box
+  const FULL = 300;                                  // water depth in px at 200 g
+  let view = 'micro', water = [], ions = [], sand = [], crystals = [], stirT = 0, evap = 0, predicted = null, saltAdded = false, sandAdded = false, revealed = false, t = 0;
+
+  function waterTop(){ return B.y + B.h - FULL * (1 - evap/100); }
+  function rnd(a,b){ return a + Math.random()*(b-a); }
+
+  function reset(){
+    water = []; ions = []; sand = []; crystals = []; stirT = 0; evap = 0; saltAdded = false; sandAdded = false; revealed = false;
+    document.getElementById('evap').value = 0; document.getElementById('evapV').textContent = '0%';
+    for (let i = 0; i < 170; i++) water.push({ x: rnd(B.x+8, B.x+B.w-8), y: rnd(B.y+B.h-FULL+6, B.y+B.h-6), vx: rnd(-1,1), vy: rnd(-1,1) });
+    say('This beaker holds 200 g of water. In particle view you can see the water particles moving all the time.');
+    setPoe('P'); updateButtons();
+  }
+  function say(s){ document.getElementById('explain').innerHTML = s; }
+  function setPoe(k){ ['P','O','E'].forEach(x => document.getElementById('p'+x).classList.toggle('on', x===k)); }
+  function updateButtons(){ document.getElementById('addSalt').disabled = saltAdded; document.getElementById('addSand').disabled = sandAdded; }
+
+  function addSalt(){
+    if (saltAdded) return; saltAdded = true; updateButtons();
+    // crystal lattice falls from top, 6x6
+    const cx = B.x + B.w/2 - 45, n = 6, s = 15;
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      ions.push({ type: (r+c)%2 ? 'Na' : 'Cl', x: cx + c*s, y: B.y - 60 + r*s, vx: 0, vy: 0, bound: true, ox: c*s, oy: r*s, free: 0 });
+    }
+    crystals.push({ x: cx, y: B.y - 60, vy: 0, n, s, landed: false });
+    setPoe('O');
+    say('Salt crystal added. Its particles are packed tightly in a pattern. Watch the <b>scale</b>, then press <b>Stir</b>.');
+  }
+  function addSand(){
+    if (sandAdded) return; sandAdded = true; updateButtons();
+    for (let i = 0; i < 26; i++) sand.push({ x: rnd(B.x+60, B.x+B.w-60), y: rnd(B.y-80, B.y-20), r: rnd(6,10), vy: 0, settled: false });
+    say('Sand added (20 g). Sand grains are <b>insoluble</b>: they do not break apart into particles. They make the water cloudy for a moment, then settle at the bottom.');
+  }
+  function stir(){ stirT = 160; if (saltAdded && !revealed) say('Stirring… water particles knock salt particles off the crystal one by one. The salt is <b>dissolving</b>, not melting.'); }
+
+  function mass(){
+    const w = 200 * (1 - evap/100);
+    return Math.round(w + (saltAdded?20:0) + (sandAdded?20:0));
+  }
+
+  // physics
+  function step(){
+    t++;
+    const top = waterTop(), bot = B.y + B.h - 4, L = B.x + 4, R = B.x + B.w - 4;
+    const agitate = stirT > 0 ? 2.2 : 1;
+    if (stirT > 0) stirT--;
+    // water particles: keep count proportional to water left
+    const target = Math.round(170 * (1 - evap/100));
+    while (water.length > target) water.splice(Math.floor(Math.random()*water.length), 1);
+    while (water.length < target) water.push({ x: rnd(L,R), y: rnd(top+4, bot), vx: rnd(-1,1), vy: rnd(-1,1) });
+    for (const p of water) {
+      p.vx += rnd(-.35,.35)*agitate; p.vy += rnd(-.35,.35)*agitate;
+      if (stirT>0) { const dx = p.x-(B.x+B.w/2), dy = p.y-(top+bot)/2; p.vx += -dy*0.0009; p.vy += dx*0.0009; }
+      p.vx *= .93; p.vy *= .93; p.x += p.vx*1.6; p.y += p.vy*1.6;
+      if (p.x < L) { p.x = L; p.vx *= -1 } if (p.x > R) { p.x = R; p.vx *= -1 }
+      if (p.y < top+3) { p.y = top+3; p.vy = Math.abs(p.vy) } if (p.y > bot) { p.y = bot; p.vy *= -1 }
+    }
+    // crystal falling
+    for (const c of crystals) {
+      if (!c.landed) {
+        c.vy += 0.25; c.y += c.vy; const floor = bot - c.n*c.s;
+        if (c.y >= floor) { c.y = floor; c.landed = true; c.vy = 0; }
+      }
+    }
+    // ions
+    const free = ions.filter(i => !i.bound).length;
+    const conc = ions.length ? 1 : 0;
+    const waterFrac = 1 - evap/100;
+    for (const p of ions) {
+      if (p.bound) {
+        const c = crystals[0]; p.x = c.x + p.ox; p.y = c.y + p.oy;
+        // dissolve from exposed edges when in water and landed
+        if (c.landed && waterFrac > 0.25) {
+          const edge = p.ox === 0 || p.oy === 0 || p.ox === (c.n-1)*c.s || p.oy === (c.n-1)*c.s || neighborsFree(p);
+          const rate = (stirT>0 ? 0.03 : 0.004);
+          if (edge && Math.random() < rate) { p.bound = false; p.vx = rnd(-2,2); p.vy = rnd(-2,0); }
+        }
+      } else {
+        p.vx += rnd(-.4,.4)*agitate; p.vy += rnd(-.4,.4)*agitate;
+        if (stirT>0) { const dx = p.x-(B.x+B.w/2), dy = p.y-(top+bot)/2; p.vx += -dy*0.0009; p.vy += dx*0.0009; }
+        p.vx *= .93; p.vy *= .93; p.x += p.vx*1.4; p.y += p.vy*1.4;
+        if (p.x < L) { p.x = L; p.vx *= -1 } if (p.x > R) { p.x = R; p.vx *= -1 }
+        if (p.y < top+4) { p.y = top+4; p.vy = Math.abs(p.vy) } if (p.y > bot) { p.y = bot; p.vy *= -1 }
+        // when water is almost gone, ions re-form crystals on the bottom
+        if (waterFrac <= 0.12) { p.vy += 0.6; }
+      }
+    }
+    // sand
+    for (const g of sand) {
+      if (!g.settled) {
+        g.vy += 0.18; if (g.y > top) g.vy *= 0.9; g.y += g.vy; g.x += (stirT>0? rnd(-2,2):rnd(-.3,.3));
+        if (g.y >= bot - g.r) { g.y = bot - g.r; g.settled = true; }
+      } else if (stirT > 0 && Math.random() < 0.08) { g.settled = false; g.vy = -rnd(2,5); }
+      if (g.x < L+g.r) g.x = L+g.r; if (g.x > R-g.r) g.x = R-g.r;
+    }
+    // feedback triggers
+    if (saltAdded && !revealed && ions.length && ions.every(i => !i.bound)) {
+      revealed = true; setPoe('E');
+      say('All the salt has <b>dissolved</b>. In “What we see” the water looks completely clear, but the particle view shows the salt is <b>still there</b>, spread out between the water particles. The scale still reads <b>220 g</b>: mass is conserved.');
+      feedback();
+    }
+  }
+  function neighborsFree(p){ // exposed if any lattice neighbour already left
+    const c = crystals[0]; const s = c.s;
+    return ions.some(q => !q.bound && q.ox !== undefined && Math.abs(q.ox - p.ox) + Math.abs(q.oy - p.oy) === s);
+  }
+  function feedback(){
+    const fb = document.getElementById('fb');
+    if (predicted === null) { fb.innerHTML = 'The scale reads <b>220 g</b>. Did you expect that?'; return; }
+    fb.innerHTML = predicted === 220
+      ? '✅ You predicted <b>220 g</b>, and you were right. The salt particles are still in the water, so no mass was lost.'
+      : '❗ You predicted <b>' + predicted + ' g</b>, but the scale reads <b>220 g</b>. Explain: where did the salt go? (Hint: switch to particle view.)';
+  }
+
+  // drawing
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const top = waterTop(), bot = B.y + B.h;
+    // bench
+    ctx.fillStyle = '#EEF2F5'; ctx.fillRect(0, 530, W, 70);
+    // scale
+    ctx.fillStyle = '#C9D3DA'; roundRect(B.x-40, bot+8, B.w+80, 26, 8); ctx.fill();
+    ctx.fillStyle = '#5B6B77'; roundRect(B.x+B.w/2-110, bot+38, 220, 56, 10); ctx.fill();
+    ctx.fillStyle = '#0D2230'; roundRect(B.x+B.w/2-96, bot+45, 192, 42, 6); ctx.fill();
+    ctx.fillStyle = '#FFD84D'; ctx.font = 'bold 30px "Courier New", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(mass() + ' g', B.x+B.w/2, bot+67);
+    ctx.font = 'bold 12px Arial'; ctx.fillStyle = '#61707C'; ctx.fillText('beaker zeroed: shows contents only', B.x+B.w/2, bot+103);
+    // water body
+    if (view === 'macro') {
+      ctx.fillStyle = 'rgba(160,210,240,0.55)'; ctx.fillRect(B.x, top, B.w, bot - top);
+      // cloudiness from moving sand
+      const moving = sand.filter(g => !g.settled && g.y > top).length;
+      if (moving) { ctx.fillStyle = 'rgba(176,122,58,' + Math.min(0.35, moving*0.02) + ')'; ctx.fillRect(B.x, top, B.w, bot-top); }
+    } else {
+      ctx.fillStyle = 'rgba(160,210,240,0.18)'; ctx.fillRect(B.x, top, B.w, bot - top);
+    }
+    // surface line
+    if (evap < 100) { ctx.strokeStyle = 'rgba(37,99,168,0.6)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(B.x, top); ctx.lineTo(B.x+B.w, top); ctx.stroke(); }
+    // particles
+    if (view === 'micro') {
+      for (const p of water) { ctx.fillStyle = '#7FB8E6'; ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, 7); ctx.fill(); }
+      for (const p of ions) { ctx.fillStyle = p.type === 'Na' ? '#8E6BD8' : '#2FB37A'; ctx.beginPath(); ctx.arc(p.x, p.y, p.type==='Na'?5.5:7, 0, 7); ctx.fill(); }
+    } else {
+      // macro: undissolved crystal shows as a white cube; dissolved ions invisible; recrystallised salt visible when dry
+      const bound = ions.filter(i => i.bound);
+      if (bound.length) { const c = crystals[0]; const frac = bound.length/ions.length; const size = c.n*c.s*Math.sqrt(frac);
+        ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#B9C4CC'; ctx.lineWidth = 2; ctx.fillRect(c.x + (c.n*c.s-size)/2, c.y + c.n*c.s - size, size, size); ctx.strokeRect(c.x + (c.n*c.s-size)/2, c.y + c.n*c.s - size, size, size); }
+      if (evap >= 88 && saltAdded) { for (const p of ions) { if (!p.bound && p.y > bot - 30) { ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle='#B9C4CC'; ctx.lineWidth=1; ctx.fillRect(p.x-3, p.y-3, 6, 6); ctx.strokeRect(p.x-3,p.y-3,6,6);} } }
+    }
+    for (const g of sand) { ctx.fillStyle = '#B07A3A'; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, 7); ctx.fill(); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.arc(g.x-g.r/3, g.y-g.r/3, g.r/3, 0, 7); ctx.fill(); }
+    // steam when evaporating
+    if (evap > 0 && evap < 100) { ctx.fillStyle = 'rgba(150,170,185,0.35)'; for (let i = 0; i < 6; i++) { const x = B.x + 40 + i*62 + Math.sin((t+i*30)/20)*8; const y = top - 20 - ((t*1.5 + i*25) % 90); ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill(); } }
+    // beaker glass
+    ctx.strokeStyle = '#5B7A8C'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(B.x-6, B.y-30); ctx.lineTo(B.x-6, bot+4); ctx.lineTo(B.x+B.w+6, bot+4); ctx.lineTo(B.x+B.w+6, B.y-30); ctx.stroke();
+    // markings
+    ctx.strokeStyle = '#9AB0BD'; ctx.lineWidth = 2; ctx.font = '12px Arial'; ctx.fillStyle = '#7A8E9A'; ctx.textAlign = 'left';
+    for (let i = 1; i <= 4; i++) { const y = bot - i*75; ctx.beginPath(); ctx.moveTo(B.x+B.w-26, y); ctx.lineTo(B.x+B.w+4, y); ctx.stroke(); ctx.fillText(i*50 + ' mL', B.x+B.w+12, y+4); }
+    // label
+    ctx.fillStyle = '#0E3A53'; ctx.font = 'bold 16px Arial'; ctx.textAlign = 'left';
+    ctx.fillText(view === 'micro' ? 'Particle view (zoomed in)' : 'What we see (normal view)', 20, 570);
+  }
+  function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+  function loop(){ step(); draw(); requestAnimationFrame(loop); }
+
+  // UI
+  document.getElementById('addSalt').onclick = addSalt;
+  document.getElementById('addSand').onclick = addSand;
+  document.getElementById('stir').onclick = stir;
+  document.getElementById('reset').onclick = () => { predicted = null; document.querySelectorAll('.choices button').forEach(b => b.classList.remove('picked')); document.getElementById('fb').textContent = 'Make your prediction first, then add the salt.'; reset(); };
+  document.querySelectorAll('.choices button').forEach(b => b.onclick = () => {
+    predicted = +b.dataset.v; document.querySelectorAll('.choices button').forEach(x => x.classList.toggle('picked', x === b));
+    document.getElementById('fb').innerHTML = revealed ? '' : 'Prediction saved: <b>' + predicted + ' g</b>. Now add the salt and stir.';
+    if (revealed) feedback();
+  });
+  const setView = v => { view = v; document.getElementById('vMicro').classList.toggle('on', v==='micro'); document.getElementById('vMacro').classList.toggle('on', v==='macro'); };
+  document.getElementById('vMicro').onclick = () => setView('micro');
+  document.getElementById('vMacro').onclick = () => setView('macro');
+  document.getElementById('evap').oninput = e => {
+    evap = +e.target.value; document.getElementById('evapV').textContent = evap + '%';
+    if (evap > 0 && saltAdded) say(evap >= 88
+      ? 'Almost all the water has evaporated. The salt particles could not leave as a gas, so they come back together as <b>solid salt crystals</b>. That is how we get the salt back in Lesson 2!'
+      : 'Heating turns water particles into a gas that leaves the beaker, so the mass goes down. The salt particles <b>stay behind</b>.');
+  };
+  reset(); loop();
+})();
+</script>
+</body>
+</html>
